@@ -16,14 +16,14 @@ ap.add_argument("-v", "--video", type=str, default=test_vid_fol + "test_video_2.
 ap.add_argument("-b", "--buffer", type=int, default=64, help="max buffer size")
 args = vars(ap.parse_args())
 
-greenLower = (29, 86, 6)
-greenUpper = (64, 255, 255)
+greenLower = np.array([25, 52, 72], np.uint8) #(29, 86, 6)
+greenUpper = np.array([102, 255, 255], np.uint8) #(64, 255, 255)
 
 yellowLower = (20, 100, 100)
 yellowUpper = (30, 255, 255)
 
-redLower = (170, 70, 50)
-redUpper = (180, 255, 255)
+redLower = np.array([136, 87, 111], np.uint8) #(170, 70, 50)
+redUpper = np.array([180, 255, 255], np.uint8) #(180, 255, 255)
 
 # ************************************************************************************************
 Lower_color = yellowLower
@@ -71,6 +71,10 @@ while True:
 	mask_1 = cv2.erode(mask_1, None, iterations=2)
 	mask_1 = cv2.dilate(mask_1, None, iterations=2)
 
+	mask_2 = cv2.inRange(hsv, greenLower, greenUpper)
+	mask_2 = cv2.erode(mask_2, None, iterations=2)
+	mask_2 = cv2.dilate(mask_2, None, iterations=2)
+
 	# (x, y) center of the ball
 
 	cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -81,16 +85,19 @@ while True:
 	cnts_1 = imutils.grab_contours(cnts_1)
 	center1 = None
 
+	cnts_2 = cv2.findContours(mask_2.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+	cnts_2 = imutils.grab_contours(cnts_2)
+	center2 = None
+
 	if len(cnts) > 0:
 		c = max(cnts, key=cv2.contourArea)
 		# print(cv2.contourArea)
 		((x, y), radius) = cv2.minEnclosingCircle(c)
-		print(str(round(x))+ ', '+ str(round(y)))
+		print('y ' + str(round(x)) + ', ' + str(round(y)))
 		M = cv2.moments(c)
 		center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 		if radius > 10:
-			cv2.circle(frame, (int(x), int(y)), int(radius),
-					   (0, 255, 255), 2)
+			cv2.circle(frame, (int(x), int(y)), int(radius), (0, 255, 255), 2)
 			cv2.circle(frame, center, 5, (0, 0, 255), -1)
 	pts.appendleft(center)
 
@@ -98,12 +105,23 @@ while True:
 		c1 = max(cnts_1, key=cv2.contourArea)
 		# print(cv2.contourArea)
 		((x1, y1), radius1) = cv2.minEnclosingCircle(c1)
-		print(str(round(x1))+ ', '+ str(round(y1)))
+		print('r ' + str(round(x1)) + ', ' + str(round(y1)))
 		M1 = cv2.moments(c1)
 		center1 = (int(M1["m10"] / M1["m00"]), int(M1["m01"] / M1["m00"]))
 		if radius1 > 10:
-			cv2.circle(frame, (int(x1), int(y1)), int(radius1),
-					   (0, 255, 255), 2)
+			cv2.circle(frame, (int(x1), int(y1)), int(radius1), (0, 255, 255), 2)
+			cv2.circle(frame, center1, 5, (0, 0, 255), -1)
+	pts.appendleft(center1)
+
+	if len(cnts_2) > 0:
+		c2 = max(cnts_2, key=cv2.contourArea)
+		# print(cv2.contourArea)
+		((x2, y2), radius2) = cv2.minEnclosingCircle(c2)
+		print('g ' + str(round(x2)) + ', ' + str(round(y2)))
+		M1 = cv2.moments(c2)
+		center1 = (int(M1["m10"] / M1["m00"]), int(M1["m01"] / M1["m00"]))
+		if radius2 > 10:
+			cv2.circle(frame, (int(x2), int(y2)), int(radius2), (0, 255, 255), 2)
 			cv2.circle(frame, center1, 5, (0, 0, 255), -1)
 	pts.appendleft(center1)
 
@@ -113,7 +131,9 @@ while True:
 	# 	thickness = int(np.sqrt(args["buffer"] / float(i + 1)) * 2.5)
 	# 	cv2.line(frame, pts[i - 1], pts[i], (0, 0, 255), thickness)
 	cv2.imshow("Frame", frame)
-	if cv2.waitKey(20) & 0xFF == ord('d'):
+	if cv2.waitKey(10) & 0xFF == ord('q'):
+		# cap.release()
+		cv2.destroyAllWindows()
 		break
 if not args.get("video", False):
 	vs.stop()
